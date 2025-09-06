@@ -1,11 +1,11 @@
 -- 99 Nights in the Forest | Full Deluxe No-Key GUI
 -- GUI Title: Free Scripts
--- Features: Kill Aura, Bring Items, ESP, Auto Farm, Auto Cook, Auto Hunger/Health, Teleports
+-- Features: Kill Aura, Bring Items, ESP, Auto Farm, Auto Cook, Auto Heal/Hunger, Teleports, Selectable Auto Rescue Child, Bring Weapons/Armor
 
 -- Load simple GUI Library
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/RobloxScriptsDev/UI-Library/main/SimpleUILib.lua"))()
-local Window = Library:CreateWindow("Free Scripts") -- <-- GUI title changed here
-Window:SetDraggable(true) -- Make the GUI movable
+local Window = Library:CreateWindow("Free Scripts")
+Window:SetDraggable(true)
 
 local player = game.Players.LocalPlayer
 local workspace = game:GetService("Workspace")
@@ -63,7 +63,7 @@ Window:CreateToggle("ESP", function(state)
     end
 end)
 
--- Auto Farm toggle (wood, fuel, food)
+-- Auto Farm toggle
 Window:CreateToggle("Auto Farm", function(state)
     autoFarmEnabled = state
 end)
@@ -95,6 +95,53 @@ Window:CreateButton("Teleport to Lost Child", function()
     end
 end)
 
+-- Selectable Auto Rescue Child
+local selectedChildName = nil
+local childrenNames = {"Squid Kid", "Dino Kid", "Koala Kid"} -- add more as needed
+
+Window:CreateDropdown("Select Child to Rescue", childrenNames, function(option)
+    selectedChildName = option
+end)
+
+Window:CreateButton("Rescue Selected Child", function()
+    if not selectedChildName then
+        warn("No child selected!")
+        return
+    end
+
+    for _, child in pairs(workspace:GetDescendants()) do
+        if child.Name == selectedChildName and child:FindFirstChild("HumanoidRootPart") then
+            local hrp = child.HumanoidRootPart
+            -- Teleport player above child
+            player.Character.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(0,5,0)
+            wait(0.1)
+            -- Grab child (put in backpack as “sack”)
+            if hrp.Parent then
+                hrp.Parent = player.Backpack
+            end
+            wait(0.1)
+            -- Return player to campfire
+            local campfire = workspace:FindFirstChild("Campfire")
+            if campfire then
+                player.Character.HumanoidRootPart.CFrame = campfire.CFrame + Vector3.new(0,3,0)
+            end
+            break
+        end
+    end
+end)
+
+-- Bring Weapons/Armor button
+Window:CreateButton("Bring Weapons/Armor", function()
+    for _, item in pairs(workspace:GetDescendants()) do
+        if item:IsA("Tool") or item:IsA("Accessory") or item.Name:match("Sword|Axe|Bow|Armor|Helmet|Chestplate|Leggings|Boots") then
+            if item:FindFirstChild("Handle") or item:IsA("Accessory") then
+                -- Teleport item to player
+                item.Parent = player.Character
+            end
+        end
+    end
+end)
+
 -- Core auto-run loop
 RunService.RenderStepped:Connect(function()
     -- Bring Items
@@ -115,7 +162,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Auto Cook (for example: campfires)
+    -- Auto Cook
     if autoCookEnabled then
         local campfire = workspace:FindFirstChild("Campfire")
         if campfire and player.Character:FindFirstChild("Backpack") then
